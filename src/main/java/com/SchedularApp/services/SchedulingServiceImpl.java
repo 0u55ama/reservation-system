@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SchedulingServiceImpl {
@@ -53,26 +54,49 @@ public class SchedulingServiceImpl {
         }
     }
 
+    //    public Map<String, Map<String, Map<String, String>>> getAvailableTimeSlots() {
+//        List<TableEntity> tables = tableRepository.findAll();
+//        Map<String, Map<String, Map<String, String>>> response = new LinkedHashMap<>();
+//
+//        for (TableEntity table : tables) {
+//            Map<String, Map<String, String>> tableData = new LinkedHashMap<>();
+//            List<TimeSlot> slots = timeSlotRepository.findByTable(table);
+//
+//            for (TimeSlot slot : slots) {
+//                if (slot.isAvailable()) {
+//                    String dateKey = slot.getDate().toString();
+//                    tableData.putIfAbsent(dateKey, new LinkedHashMap<>());
+//                    String timeKey = "time_" + slot.getTime().toString();
+//                    tableData.get(dateKey).put(timeKey, slot.getTime().toString());
+//                }
+//            }
+//
+//            response.put(table.getName(), tableData);
+//        }
+//
+//        return response;
+//    }
     public Map<String, Map<String, Map<String, String>>> getAvailableTimeSlots() {
-        List<TableEntity> tables = tableRepository.findAll();
-        Map<String, Map<String, Map<String, String>>> response = new LinkedHashMap<>();
+        // Fetch all available time slots in one query
+        List<TimeSlot> slots = timeSlotRepository.findAll()
+                .stream()
+                .filter(TimeSlot::isAvailable)
+                .toList();
 
-        for (TableEntity table : tables) {
-            Map<String, Map<String, String>> tableData = new LinkedHashMap<>();
-            List<TimeSlot> slots = timeSlotRepository.findByTable(table);
+        // Group by table name, then by date, and finally by time
 
-            for (TimeSlot slot : slots) {
-                if (slot.isAvailable()) {
-                    String dateKey = slot.getDate().toString();
-                    tableData.putIfAbsent(dateKey, new LinkedHashMap<>());
-                    String timeKey = "time_" + slot.getTime().toString();
-                    tableData.get(dateKey).put(timeKey, slot.getTime().toString());
-                }
-            }
-
-            response.put(table.getName(), tableData);
-        }
-
-        return response;
+        return slots.stream()
+                .collect(Collectors.groupingBy(
+                        slot -> slot.getTable().getName(), // Group by table name
+                        Collectors.groupingBy(
+                                slot -> slot.getDate().toString(), // Group by date
+                                Collectors.toMap(
+                                        slot -> "time_" + slot.getTime().toString(), // Key: "time_HH:mm"
+                                        slot -> slot.getTime().toString(), // Value: HH:mm
+                                        (existing, replacement) -> existing, // Merge function in case of conflict
+                                        LinkedHashMap::new // Use LinkedHashMap to maintain insertion order
+                                )
+                        )
+                ));
     }
 }
