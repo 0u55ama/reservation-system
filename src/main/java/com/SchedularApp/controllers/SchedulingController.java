@@ -23,19 +23,19 @@ public class SchedulingController {
     private SchedulingServiceImpl schedulingService;
 
 
-    @PostMapping("/add")
-    public ResponseEntity<String> addTimeSlot(@RequestBody TimeSlotDto timeSlotRequestDto) {
-        boolean isAdded = schedulingService.saveTimeSlot(
-                timeSlotRequestDto.getTableName(),
-                LocalDate.parse(timeSlotRequestDto.getDate()),
-                LocalTime.parse(timeSlotRequestDto.getTime())
-        );
-        if (isAdded) {
-            return ResponseEntity.ok("Time slot added successfully.");
-        } else {
-            return ResponseEntity.badRequest().body("Time slot already exists.");
-        }
-    }
+//    @PostMapping("/add")
+//    public ResponseEntity<String> addTimeSlot(@RequestBody TimeSlotDto timeSlotRequestDto) {
+//        boolean isAdded = schedulingService.saveTimeSlot(
+//                timeSlotRequestDto.getTableName(),
+//                LocalDate.parse(timeSlotRequestDto.getDate()),
+//                LocalTime.parse(timeSlotRequestDto.getTime())
+//        );
+//        if (isAdded) {
+//            return ResponseEntity.ok("Time slot added successfully.");
+//        } else {
+//            return ResponseEntity.badRequest().body("Time slot already exists.");
+//        }
+//    }
 
     @PostMapping("/schedule")
     public ResponseEntity<String> bookTimeSlot(@RequestBody TimeSlotDto timeSlotRequestDto) {
@@ -51,23 +51,67 @@ public class SchedulingController {
         }
     }
 
-    @PostMapping("/create-multi-date-table")
-    public ResponseEntity<String> createMultiDateTableWithTimeSlots(@RequestBody MultiDateTableCreationRequestDto requestDto) {
-        boolean isCreated = schedulingService.createMultiDateTableWithTimeSlots(
+//    {
+//        "tableName": "table_A",
+//        "date": "2024-01-01",
+//        "time": "08:00"
+//    }
+
+    @PostMapping("/create-table")
+    public ResponseEntity<String> createTable(@RequestBody MultiDateTableCreationRequestDto requestDto) {
+        boolean isCreated = schedulingService.createTable(
                 requestDto.getTableName(),
-                requestDto.getDateTimeSlots().entrySet().stream().collect(
-                        Collectors.toMap(
-                                entry -> LocalDate.parse(entry.getKey()),
-                                entry -> entry.getValue().stream().map(LocalTime::parse).collect(Collectors.toList())
-                        )
-                )
+                requestDto.getDateTimeSlots() != null ?
+                        requestDto.getDateTimeSlots().entrySet().stream().collect(
+                                Collectors.toMap(
+                                        entry -> LocalDate.parse(entry.getKey()),
+                                        entry -> entry.getValue() != null ?
+                                                entry.getValue().stream().map(LocalTime::parse).collect(Collectors.toList())
+                                                : null
+                                )
+                        ) : null
         );
         if (isCreated) {
-            return ResponseEntity.ok("Table with multiple dates and time slots created successfully.");
+            return ResponseEntity.ok("Table created successfully.");
         } else {
             return ResponseEntity.badRequest().body("Table creation failed. Table may already exist.");
         }
     }
+
+// {
+//     "tableName": "table_C",
+// }
+
+    @PostMapping("/add-dates-times")
+    public ResponseEntity<String> addDatesAndTimesToTable(@RequestBody MultiDateTableCreationRequestDto requestDto) {
+        boolean isUpdated = schedulingService.addDatesAndTimesToTable(
+                requestDto.getTableName(),
+                requestDto.getDateTimeSlots().entrySet().stream().collect(
+                        Collectors.toMap(
+                                entry -> LocalDate.parse(entry.getKey()),
+                                entry -> entry.getValue() != null ?
+                                        entry.getValue().stream().map(LocalTime::parse).collect(Collectors.toList())
+                                        : null
+                        )
+                )
+        );
+        if (isUpdated) {
+            return ResponseEntity.ok("Dates and times added successfully.");
+        } else {
+            return ResponseEntity.badRequest().body("Adding dates or times failed. The table may not exist, or the dates/times may already be added.");
+        }
+    }
+
+// {
+//     "tableName": "table_C",
+//     "dateTimeSlots": {
+//         "2024-01-01": ["10:00"],
+//         "2024-01-02": []
+//     }
+// }
+
+
+
 
     @GetMapping("/slots")
     public ResponseEntity<Map<String, Map<String, Map<String, String>>>> getAllTimeSlots() {
@@ -83,6 +127,13 @@ public class SchedulingController {
             return ResponseEntity.badRequest().body("Failed to delete dates.");
         }
     }
+//    {
+//        "tableName": "table_C",
+//            "dates": [
+//        "2024-01-02",
+//        "2024-01-01"
+//    ]
+//    }
 
     @DeleteMapping("/delete-times")
     public ResponseEntity<String> deleteTimes(@RequestBody DeleteRequestDto requestDto) {
@@ -93,6 +144,15 @@ public class SchedulingController {
             return ResponseEntity.badRequest().body("Failed to delete time slots.");
         }
     }
+//    {
+//        "tableName": "table_C",
+//            "dates": [
+//        "2024-01-01"
+//    ],
+//        "times": [
+//        "10:00"
+//    ]
+//    }
 
     @DeleteMapping("/delete-table")
     public ResponseEntity<String> deleteTable(@RequestBody DeleteRequestDto requestDto) {
@@ -103,6 +163,10 @@ public class SchedulingController {
             return ResponseEntity.badRequest().body("Failed to delete table.");
         }
     }
+
+//    {
+//        "tableName": "table_C",
+//    }
 
 
 }

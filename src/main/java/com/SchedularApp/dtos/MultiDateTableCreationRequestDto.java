@@ -7,6 +7,7 @@ public class MultiDateTableCreationRequestDto {
     private String tableName;
     private Map<String, List<String>> dateTimeSlots; // Key: Date, Value: List of Times
 
+    // Getters and Setters
     public String getTableName() {
         return tableName;
     }

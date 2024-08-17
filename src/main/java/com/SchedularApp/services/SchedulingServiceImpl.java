@@ -21,21 +21,21 @@ public class SchedulingServiceImpl {
     @Autowired
     private TimeSlotRepository timeSlotRepository;
 
-    public boolean saveTimeSlot(String tableName, LocalDate date, LocalTime time) {
-        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
-        if (tableOpt.isPresent()) {
-            TableEntity table = tableOpt.get();
-            Optional<TimeSlot> existingSlot = timeSlotRepository.findByTableAndDateAndTime(table, date, time);
-            if (existingSlot.isPresent()) {
-                return false; // Time slot is already taken for the given date
-            } else {
-                timeSlotRepository.save(new TimeSlot(date, time, table, true));
-                return true; // Time slot is available and has been saved
-            }
-        } else {
-            throw new RuntimeException("Table not found");
-        }
-    }
+//    public boolean saveTimeSlot(String tableName, LocalDate date, LocalTime time) {
+//        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
+//        if (tableOpt.isPresent()) {
+//            TableEntity table = tableOpt.get();
+//            Optional<TimeSlot> existingSlot = timeSlotRepository.findByTableAndDateAndTime(table, date, time);
+//            if (existingSlot.isPresent()) {
+//                return false; // Time slot is already taken for the given date
+//            } else {
+//                timeSlotRepository.save(new TimeSlot(date, time, table, true));
+//                return true; // Time slot is available and has been saved
+//            }
+//        } else {
+//            throw new RuntimeException("Table not found");
+//        }
+//    }
 
     public boolean bookTimeSlot(String tableName, LocalDate date, LocalTime time) {
         Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
@@ -59,6 +59,7 @@ public class SchedulingServiceImpl {
         List<TimeSlot> slots = timeSlotRepository.findAll()
                 .stream()
                 .filter(TimeSlot::isAvailable)
+                .filter(slot -> slot.getTime() != null) // Filter out slots with null times
                 .toList();
 
         return slots.stream()
@@ -75,9 +76,9 @@ public class SchedulingServiceImpl {
                         )
                 ));
     }
-    public boolean createMultiDateTableWithTimeSlots(String tableName, Map<LocalDate, List<LocalTime>> dateTimeSlots) {
-        Optional<TableEntity> existingTable = tableRepository.findByName(tableName);
-        if (existingTable.isPresent()) {
+
+    public boolean createTable(String tableName, Map<LocalDate, List<LocalTime>> dateTimeSlots) {
+        if (tableRepository.findByName(tableName).isPresent()) {
             return false; // Table already exists
         }
 
@@ -85,18 +86,67 @@ public class SchedulingServiceImpl {
         TableEntity newTable = new TableEntity(tableName);
         tableRepository.save(newTable);
 
-        // Create and save the time slots for each date
-        for (Map.Entry<LocalDate, List<LocalTime>> entry : dateTimeSlots.entrySet()) {
-            LocalDate date = entry.getKey();
-            List<LocalTime> times = entry.getValue();
-            for (LocalTime time : times) {
-                TimeSlot timeSlot = new TimeSlot(date, time, newTable, true);
-                timeSlotRepository.save(timeSlot);
-            }
+        // Process the dateTimeSlots map
+        if (dateTimeSlots != null) {
+            dateTimeSlots.forEach((date, times) -> {
+                if (times.isEmpty()) {
+                    // Create a TimeSlot for the date without specific times
+                    timeSlotRepository.save(new TimeSlot(date, null, newTable, true));
+                } else {
+                    // Create TimeSlots for each time
+                    times.forEach(time -> timeSlotRepository.save(new TimeSlot(date, time, newTable, true)));
+                }
+            });
         }
 
         return true;
     }
+    //    {
+//        "tableName": "table_C",
+//            "dateTimeSlots": {
+//        "2024-01-01": ["10:00"],
+//        "2024-01-02": []
+//    }
+//    }
+
+    //    {
+//        "tableName": "table_C",
+//    }
+
+    public boolean addDatesAndTimesToTable(String tableName, Map<LocalDate, List<LocalTime>> dateTimeSlots) {
+        Optional<TableEntity> existingTable = tableRepository.findByName(tableName);
+        if (!existingTable.isPresent()) {
+            return false; // Table does not exist
+        }
+
+        TableEntity table = existingTable.get();
+
+        // Process the dateTimeSlots map
+        dateTimeSlots.forEach((date, times) -> {
+            if (times.isEmpty()) {
+                // Only add a new date if it doesn't exist
+                if (!timeSlotRepository.findByTableAndDateAndTime(table, date, null).isPresent()) {
+                    timeSlotRepository.save(new TimeSlot(date, null, table, true));
+                }
+            } else {
+                // Add times to the existing date if they don't exist
+                times.stream()
+                        .filter(time -> !timeSlotRepository.findByTableAndDateAndTime(table, date, time).isPresent())
+                        .forEach(time -> timeSlotRepository.save(new TimeSlot(date, time, table, true)));
+            }
+        });
+
+        return true;
+    }
+
+//    {
+//        "tableName": "table_C",
+//            "dateTimeSlots": {
+//        "2024-01-01": ["10:00"],
+//        "2024-01-02": []
+//    }
+//    }
+
 
     public boolean deleteDates(String tableName, List<String> dates) {
         if (tableName == null || dates == null) {
@@ -110,9 +160,7 @@ public class SchedulingServiceImpl {
                     .map(LocalDate::parse)
                     .forEach(date -> {
                         List<TimeSlot> timeSlots = timeSlotRepository.findByTableAndDate(table, date);
-                        if (!timeSlots.isEmpty()) {
-                            timeSlotRepository.deleteAll(timeSlots);
-                        }
+                        timeSlotRepository.deleteAll(timeSlots);
                     });
             return true;
         }
