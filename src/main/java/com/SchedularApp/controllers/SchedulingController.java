@@ -1,5 +1,6 @@
 package com.SchedularApp.controllers;
 
+import com.SchedularApp.dtos.MultiDateTableCreationRequestDto;
 import com.SchedularApp.dtos.TimeSlotDto;
 import com.SchedularApp.services.SchedulingServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,9 +50,29 @@ public class SchedulingController {
         }
     }
 
+    @PostMapping("/create-multi-date-table")
+    public ResponseEntity<String> createMultiDateTableWithTimeSlots(@RequestBody MultiDateTableCreationRequestDto requestDto) {
+        boolean isCreated = schedulingService.createMultiDateTableWithTimeSlots(
+                requestDto.getTableName(),
+                requestDto.getDateTimeSlots().entrySet().stream().collect(
+                        Collectors.toMap(
+                                entry -> LocalDate.parse(entry.getKey()),
+                                entry -> entry.getValue().stream().map(LocalTime::parse).collect(Collectors.toList())
+                        )
+                )
+        );
+        if (isCreated) {
+            return ResponseEntity.ok("Table with multiple dates and time slots created successfully.");
+        } else {
+            return ResponseEntity.badRequest().body("Table creation failed. Table may already exist.");
+        }
+    }
+
     @GetMapping("/slots")
     public ResponseEntity<Map<String, Map<String, Map<String, String>>>> getAllTimeSlots() {
         Map<String, Map<String, Map<String, String>>> slots = schedulingService.getAvailableTimeSlots();
         return ResponseEntity.ok(slots);
     }
+
+
 }

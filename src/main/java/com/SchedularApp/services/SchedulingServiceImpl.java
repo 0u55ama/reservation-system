@@ -54,36 +54,12 @@ public class SchedulingServiceImpl {
         }
     }
 
-    //    public Map<String, Map<String, Map<String, String>>> getAvailableTimeSlots() {
-//        List<TableEntity> tables = tableRepository.findAll();
-//        Map<String, Map<String, Map<String, String>>> response = new LinkedHashMap<>();
-//
-//        for (TableEntity table : tables) {
-//            Map<String, Map<String, String>> tableData = new LinkedHashMap<>();
-//            List<TimeSlot> slots = timeSlotRepository.findByTable(table);
-//
-//            for (TimeSlot slot : slots) {
-//                if (slot.isAvailable()) {
-//                    String dateKey = slot.getDate().toString();
-//                    tableData.putIfAbsent(dateKey, new LinkedHashMap<>());
-//                    String timeKey = "time_" + slot.getTime().toString();
-//                    tableData.get(dateKey).put(timeKey, slot.getTime().toString());
-//                }
-//            }
-//
-//            response.put(table.getName(), tableData);
-//        }
-//
-//        return response;
-//    }
     public Map<String, Map<String, Map<String, String>>> getAvailableTimeSlots() {
         // Fetch all available time slots in one query
         List<TimeSlot> slots = timeSlotRepository.findAll()
                 .stream()
                 .filter(TimeSlot::isAvailable)
                 .toList();
-
-        // Group by table name, then by date, and finally by time
 
         return slots.stream()
                 .collect(Collectors.groupingBy(
@@ -98,5 +74,27 @@ public class SchedulingServiceImpl {
                                 )
                         )
                 ));
+    }
+    public boolean createMultiDateTableWithTimeSlots(String tableName, Map<LocalDate, List<LocalTime>> dateTimeSlots) {
+        Optional<TableEntity> existingTable = tableRepository.findByName(tableName);
+        if (existingTable.isPresent()) {
+            return false; // Table already exists
+        }
+
+        // Create and save the new table
+        TableEntity newTable = new TableEntity(tableName);
+        tableRepository.save(newTable);
+
+        // Create and save the time slots for each date
+        for (Map.Entry<LocalDate, List<LocalTime>> entry : dateTimeSlots.entrySet()) {
+            LocalDate date = entry.getKey();
+            List<LocalTime> times = entry.getValue();
+            for (LocalTime time : times) {
+                TimeSlot timeSlot = new TimeSlot(date, time, newTable, true);
+                timeSlotRepository.save(timeSlot);
+            }
+        }
+
+        return true;
     }
 }
