@@ -1,5 +1,6 @@
 package com.SchedularApp.controllers;
 
+import com.SchedularApp.dtos.DeleteRequestDto;
 import com.SchedularApp.dtos.MultiDateTableCreationRequestDto;
 import com.SchedularApp.dtos.TimeSlotDto;
 import com.SchedularApp.services.SchedulingServiceImpl;
@@ -72,6 +73,35 @@ public class SchedulingController {
     public ResponseEntity<Map<String, Map<String, Map<String, String>>>> getAllTimeSlots() {
         Map<String, Map<String, Map<String, String>>> slots = schedulingService.getAvailableTimeSlots();
         return ResponseEntity.ok(slots);
+    }
+    @DeleteMapping("/delete-dates")
+    public ResponseEntity<String> deleteDates(@RequestBody DeleteRequestDto requestDto) {
+        boolean isDeleted = schedulingService.deleteDates(requestDto.getTableName(), requestDto.getDates());
+        if (isDeleted) {
+            return ResponseEntity.ok("Dates and all associated time slots deleted successfully.");
+        } else {
+            return ResponseEntity.badRequest().body("Failed to delete dates.");
+        }
+    }
+
+    @DeleteMapping("/delete-times")
+    public ResponseEntity<String> deleteTimes(@RequestBody DeleteRequestDto requestDto) {
+        boolean isDeleted = schedulingService.deleteTimes(requestDto.getTableName(), requestDto.getDates().get(0), requestDto.getTimes());
+        if (isDeleted) {
+            return ResponseEntity.ok("Time slots deleted successfully.");
+        } else {
+            return ResponseEntity.badRequest().body("Failed to delete time slots.");
+        }
+    }
+
+    @DeleteMapping("/delete-table")
+    public ResponseEntity<String> deleteTable(@RequestBody DeleteRequestDto requestDto) {
+        boolean isDeleted = schedulingService.deleteTable(requestDto.getTableName());
+        if (isDeleted) {
+            return ResponseEntity.ok("Table and all associated dates and time slots deleted successfully.");
+        } else {
+            return ResponseEntity.badRequest().body("Failed to delete table.");
+        }
     }
 
 

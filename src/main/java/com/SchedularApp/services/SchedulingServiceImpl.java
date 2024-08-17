@@ -97,4 +97,64 @@ public class SchedulingServiceImpl {
 
         return true;
     }
+
+    public boolean deleteDates(String tableName, List<String> dates) {
+        if (tableName == null || dates == null) {
+            return false;
+        }
+
+        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
+        if (tableOpt.isPresent()) {
+            TableEntity table = tableOpt.get();
+            for (String date : dates) {
+                LocalDate parsedDate = LocalDate.parse(date);
+                List<TimeSlot> timeSlots = timeSlotRepository.findByTableAndDate(table, parsedDate);
+                if (!timeSlots.isEmpty()) {
+                    timeSlotRepository.deleteAll(timeSlots);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean deleteTimes(String tableName, String date, List<String> times) {
+        if (tableName == null || date == null || times == null) {
+            return false;
+        }
+
+        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
+        if (tableOpt.isPresent()) {
+            TableEntity table = tableOpt.get();
+            LocalDate parsedDate = LocalDate.parse(date);
+            for (String time : times) {
+                LocalTime parsedTime = LocalTime.parse(time);
+                Optional<TimeSlot> timeSlotOpt = timeSlotRepository.findByTableAndDateAndTime(table, parsedDate, parsedTime);
+                timeSlotOpt.ifPresent(timeSlotRepository::delete);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean deleteTable(String tableName) {
+        if (tableName == null) {
+            return false;
+        }
+
+        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
+        if (tableOpt.isPresent()) {
+            TableEntity table = tableOpt.get();
+            List<TimeSlot> timeSlots = timeSlotRepository.findByTable(table);
+            if (!timeSlots.isEmpty()) {
+                timeSlotRepository.deleteAll(timeSlots);
+            }
+            tableRepository.delete(table);
+            return true;
+        }
+        return false;
+    }
+
+
+
 }
