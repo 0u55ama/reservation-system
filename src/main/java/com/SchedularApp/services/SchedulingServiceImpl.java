@@ -129,6 +129,11 @@ public class SchedulingServiceImpl {
                     timeSlotRepository.save(new TimeSlot(date, null, table, true));
                 }
             } else {
+                // Check if the date exists with null time slots and remove them
+                timeSlotRepository.findByTableAndDate(table, date).stream()
+                        .filter(slot -> slot.getTime() == null)
+                        .forEach(slot -> timeSlotRepository.delete(slot));
+
                 // Add times to the existing date if they don't exist
                 times.stream()
                         .filter(time -> !timeSlotRepository.findByTableAndDateAndTime(table, date, time).isPresent())

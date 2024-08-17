@@ -98,7 +98,7 @@ public class SchedulingController {
         if (isUpdated) {
             return ResponseEntity.ok("Dates and times added successfully.");
         } else {
-            return ResponseEntity.badRequest().body("Adding dates or times failed. The table may not exist, or the dates/times may already be added.");
+            return ResponseEntity.badRequest().body("Adding dates or times failed. The t able may not exist, or the dates/times may already be added.");
         }
     }
 
