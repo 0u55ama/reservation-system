@@ -106,13 +106,14 @@ public class SchedulingServiceImpl {
         Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
         if (tableOpt.isPresent()) {
             TableEntity table = tableOpt.get();
-            for (String date : dates) {
-                LocalDate parsedDate = LocalDate.parse(date);
-                List<TimeSlot> timeSlots = timeSlotRepository.findByTableAndDate(table, parsedDate);
-                if (!timeSlots.isEmpty()) {
-                    timeSlotRepository.deleteAll(timeSlots);
-                }
-            }
+            dates.stream()
+                    .map(LocalDate::parse)
+                    .forEach(date -> {
+                        List<TimeSlot> timeSlots = timeSlotRepository.findByTableAndDate(table, date);
+                        if (!timeSlots.isEmpty()) {
+                            timeSlotRepository.deleteAll(timeSlots);
+                        }
+                    });
             return true;
         }
         return false;
@@ -127,11 +128,12 @@ public class SchedulingServiceImpl {
         if (tableOpt.isPresent()) {
             TableEntity table = tableOpt.get();
             LocalDate parsedDate = LocalDate.parse(date);
-            for (String time : times) {
-                LocalTime parsedTime = LocalTime.parse(time);
-                Optional<TimeSlot> timeSlotOpt = timeSlotRepository.findByTableAndDateAndTime(table, parsedDate, parsedTime);
-                timeSlotOpt.ifPresent(timeSlotRepository::delete);
-            }
+            times.stream()
+                    .map(LocalTime::parse)
+                    .forEach(time -> {
+                        Optional<TimeSlot> timeSlotOpt = timeSlotRepository.findByTableAndDateAndTime(table, parsedDate, time);
+                        timeSlotOpt.ifPresent(timeSlotRepository::delete);
+                    });
             return true;
         }
         return false;
