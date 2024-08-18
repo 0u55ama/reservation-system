@@ -1,5 +1,6 @@
 package com.SchedularApp.controllers;
 
+import com.SchedularApp.dtos.BookingRequestDto;
 import com.SchedularApp.dtos.DeleteRequestDto;
 import com.SchedularApp.dtos.MultiDateTableCreationRequestDto;
 import com.SchedularApp.dtos.TimeSlotDto;
@@ -37,25 +38,48 @@ public class SchedulingController {
 //        }
 //    }
 
+//    @PostMapping("/schedule")
+//    public ResponseEntity<String> bookTimeSlot(@RequestBody TimeSlotDto timeSlotRequestDto) {
+//        boolean isBooked = schedulingService.bookTimeSlot(
+//                timeSlotRequestDto.getTableName(),
+//                LocalDate.parse(timeSlotRequestDto.getDate()),
+//                LocalTime.parse(timeSlotRequestDto.getTime())
+//        );
+//        if (isBooked) {
+//            return ResponseEntity.ok("Time slot booked successfully.");
+//        } else {
+//            return ResponseEntity.badRequest().body("Time slot is not available at the moment.");
+//        }
+//    }
+
     @PostMapping("/schedule")
-    public ResponseEntity<String> bookTimeSlot(@RequestBody TimeSlotDto timeSlotRequestDto) {
-        boolean isBooked = schedulingService.bookTimeSlot(
-                timeSlotRequestDto.getTableName(),
-                LocalDate.parse(timeSlotRequestDto.getDate()),
-                LocalTime.parse(timeSlotRequestDto.getTime())
-        );
+    public ResponseEntity<String> bookTimeSlot(@RequestBody BookingRequestDto bookingRequestDto) {
+        boolean isBooked = schedulingService.bookTimeSlot(bookingRequestDto);
         if (isBooked) {
             return ResponseEntity.ok("Time slot booked successfully.");
         } else {
             return ResponseEntity.badRequest().body("Time slot is not available at the moment.");
         }
     }
-
 //    {
 //        "tableName": "table_A",
 //        "date": "2024-01-01",
 //        "time": "08:00"
 //    }
+
+    @GetMapping("/get-all-dates-times")
+    public ResponseEntity<Map<String, Map<String, String>>> getAllDatesAndTimesForTable(@RequestBody TimeSlotDto requestDto) {
+        Map<String, Map<String, String>> datesAndTimes = schedulingService.getAllDatesAndTimesForTable(requestDto.getTableName());
+        return ResponseEntity.ok(datesAndTimes);
+    }
+    @GetMapping("/get-times-for-date")
+    public ResponseEntity<Map<String, String>> getTimesForTableOnDate(@RequestBody TimeSlotDto requestDto) {
+        Map<String, String> times = schedulingService.getTimesForTableOnDate(
+                requestDto.getTableName(),
+                requestDto.getDate()
+        );
+        return ResponseEntity.ok(times);
+    }
 
     @PostMapping("/create-table")
     public ResponseEntity<String> createTable(@RequestBody MultiDateTableCreationRequestDto requestDto) {
@@ -109,7 +133,6 @@ public class SchedulingController {
 //         "2024-01-02": []
 //     }
 // }
-
 
 
 

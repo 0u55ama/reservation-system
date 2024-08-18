@@ -1,9 +1,12 @@
 package com.SchedularApp.services;
 
+import com.SchedularApp.Entities.Customer;
+import com.SchedularApp.Repositories.CustomerRepository;
 import com.SchedularApp.Repositories.TableRepository;
 import com.SchedularApp.Entities.TableEntity;
 import com.SchedularApp.Entities.TimeSlot;
 import com.SchedularApp.Repositories.TimeSlotRepository;
+import com.SchedularApp.dtos.BookingRequestDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +24,9 @@ public class SchedulingServiceImpl {
     @Autowired
     private TimeSlotRepository timeSlotRepository;
 
+    @Autowired
+    private CustomerRepository customerRepository;
+
 //    public boolean saveTimeSlot(String tableName, LocalDate date, LocalTime time) {
 //        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
 //        if (tableOpt.isPresent()) {
@@ -37,14 +43,81 @@ public class SchedulingServiceImpl {
 //        }
 //    }
 
-    public boolean bookTimeSlot(String tableName, LocalDate date, LocalTime time) {
-        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
+    public Map<String, Map<String, String>> getAllDatesAndTimesForTable(String tableName) {
+        Optional<TableEntity> table = tableRepository.findByName(tableName);
+        if (table.isEmpty()) {
+            return Collections.emptyMap(); // Table does not exist
+        }
+
+        return timeSlotRepository.findByTable(table.get()).stream()
+                .filter(slot -> slot.getTime() != null) // Filter out slots with null times
+                .collect(Collectors.groupingBy(
+                        slot -> slot.getDate().toString(), // Group by date
+                        LinkedHashMap::new, // Maintain insertion order
+                        Collectors.toMap(
+                                slot -> "time_" + slot.getTime().toString(), // Key: "time_HH:mm"
+                                slot -> slot.getTime().toString(), // Value: HH:mm
+                                (existing, replacement) -> existing, // Merge function in case of conflict
+                                LinkedHashMap::new // Maintain insertion order within each date
+                        )
+                ));
+    }
+
+    public Map<String, String> getTimesForTableOnDate(String tableName, String date) {
+        Optional<TableEntity> table = tableRepository.findByName(tableName);
+        if (table.isEmpty()) {
+            return Collections.emptyMap(); // Table does not exist
+        }
+
+        LocalDate parsedDate = LocalDate.parse(date);
+        return timeSlotRepository.findByTableAndDate(table.get(), parsedDate).stream()
+                .filter(slot -> slot.getTime() != null) // Filter out slots with null times
+                .collect(Collectors.toMap(
+                        slot -> "time_" + slot.getTime().toString(), // Key: "time_HH:mm"
+                        slot -> slot.getTime().toString(), // Value: HH:mm
+                        (existing, replacement) -> existing, // Merge function in case of conflict
+                        LinkedHashMap::new // Maintain insertion order
+                ));
+    }
+
+//    public boolean bookTimeSlot(String tableName, LocalDate date, LocalTime time) {
+//        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
+//        if (tableOpt.isPresent()) {
+//            TableEntity table = tableOpt.get();
+//            Optional<TimeSlot> existingSlot = timeSlotRepository.findByTableAndDateAndTime(table, date, time);
+//            if (existingSlot.isPresent() && existingSlot.get().isAvailable()) {
+//                existingSlot.get().setAvailable(false);
+//                timeSlotRepository.save(existingSlot.get());
+//                return true; // Time slot has been booked
+//            } else {
+//                return false; // Time slot is not available
+//            }
+//        } else {
+//            throw new RuntimeException("Table not found");
+//        }
+//    }
+
+    public boolean bookTimeSlot(BookingRequestDto bookingRequestDto) {
+        Optional<TableEntity> tableOpt = tableRepository.findByName(bookingRequestDto.getTableName());
         if (tableOpt.isPresent()) {
             TableEntity table = tableOpt.get();
-            Optional<TimeSlot> existingSlot = timeSlotRepository.findByTableAndDateAndTime(table, date, time);
+            Optional<TimeSlot> existingSlot = timeSlotRepository.findByTableAndDateAndTime(table, LocalDate.parse(bookingRequestDto.getDate()), LocalTime.parse(bookingRequestDto.getTime()));
             if (existingSlot.isPresent() && existingSlot.get().isAvailable()) {
-                existingSlot.get().setAvailable(false);
-                timeSlotRepository.save(existingSlot.get());
+                // Create and save the customer
+                Customer customer = new Customer();
+                customer.setFirstname(bookingRequestDto.getFirstname());
+                customer.setLastname(bookingRequestDto.getLastname());
+                customer.setPhonenumber(bookingRequestDto.getPhonenumber());
+                // Additional customer details can be set here
+
+                customerRepository.save(customer);
+
+                // Update the time slot
+                TimeSlot timeSlot = existingSlot.get();
+                timeSlot.setAvailable(false);
+                timeSlot.setCustomer(customer);
+                timeSlotRepository.save(timeSlot);
+
                 return true; // Time slot has been booked
             } else {
                 return false; // Time slot is not available
@@ -53,7 +126,6 @@ public class SchedulingServiceImpl {
             throw new RuntimeException("Table not found");
         }
     }
-
     public Map<String, Map<String, Map<String, String>>> getAvailableTimeSlots() {
         // Fetch all available time slots in one query
         List<TimeSlot> slots = timeSlotRepository.findAll()
@@ -91,17 +163,18 @@ public class SchedulingServiceImpl {
             dateTimeSlots.forEach((date, times) -> {
                 if (times.isEmpty()) {
                     // Create a TimeSlot for the date without specific times
-                    timeSlotRepository.save(new TimeSlot(date, null, newTable, true));
+                    timeSlotRepository.save(new TimeSlot(date, null, newTable, null, true));
                 } else {
                     // Create TimeSlots for each time
-                    times.forEach(time -> timeSlotRepository.save(new TimeSlot(date, time, newTable, true)));
+                    times.forEach(time -> timeSlotRepository.save(new TimeSlot(date, time, newTable, null, true)));
                 }
             });
         }
 
         return true;
     }
-    //    {
+
+//    {
 //        "tableName": "table_C",
 //            "dateTimeSlots": {
 //        "2024-01-01": ["10:00"],
@@ -109,7 +182,7 @@ public class SchedulingServiceImpl {
 //    }
 //    }
 
-    //    {
+//    {
 //        "tableName": "table_C",
 //    }
 
@@ -126,7 +199,7 @@ public class SchedulingServiceImpl {
             if (times.isEmpty()) {
                 // Only add a new date if it doesn't exist
                 if (!timeSlotRepository.findByTableAndDateAndTime(table, date, null).isPresent()) {
-                    timeSlotRepository.save(new TimeSlot(date, null, table, true));
+                    timeSlotRepository.save(new TimeSlot(date, null, table, null,true));
                 }
             } else {
                 // Check if the date exists with null time slots and remove them
@@ -137,7 +210,7 @@ public class SchedulingServiceImpl {
                 // Add times to the existing date if they don't exist
                 times.stream()
                         .filter(time -> !timeSlotRepository.findByTableAndDateAndTime(table, date, time).isPresent())
-                        .forEach(time -> timeSlotRepository.save(new TimeSlot(date, time, table, true)));
+                        .forEach(time -> timeSlotRepository.save(new TimeSlot(date, time, table, null, true)));
             }
         });
 

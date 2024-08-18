@@ -83,19 +83,19 @@ public class DataInitializer implements CommandLineRunner {
 
             // Save time slots for table_A
             for (LocalTime time : times) {
-                timeSlotRepository.save(new TimeSlot(startDate, time, tableA, availability));
+                timeSlotRepository.save(new TimeSlot(startDate, time, tableA,null, availability));
             }
 
             // Save time slots for table_B
             for (LocalTime time : times) {
                 LocalDate date = startDate.plusDays(1);
-                timeSlotRepository.save(new TimeSlot(date, time, tableB, availability));
+                timeSlotRepository.save(new TimeSlot(date, time, tableB,null, availability));
             }
 
             // Save time slots for table_B
             for (LocalTime time : times) {
                 LocalDate date = startDate.plusDays(2);
-                timeSlotRepository.save(new TimeSlot(date, time, tableB, availability));
+                timeSlotRepository.save(new TimeSlot(date, time, tableB, null, availability));
             }
         }
     }

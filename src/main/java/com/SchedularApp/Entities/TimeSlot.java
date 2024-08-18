@@ -19,14 +19,19 @@ public class TimeSlot {
     @JoinColumn(name = "table_id")
     private TableEntity table;
 
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
     // Constructors, Getters, Setters
     public TimeSlot() {}
 
-    public TimeSlot(LocalDate date, LocalTime time, TableEntity table, boolean available) {
+    public TimeSlot(LocalDate date, LocalTime time, TableEntity table, Customer customer, boolean available) {
         this.date = date;
         this.time = time;
         this.table = table;
         this.available = available;
+        this.customer = customer;
     }
 
     public Long getId() {
@@ -67,5 +72,13 @@ public class TimeSlot {
 
     public void setAvailable(boolean available) {
         this.available = available;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 }
