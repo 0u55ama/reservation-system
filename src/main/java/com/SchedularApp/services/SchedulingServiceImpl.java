@@ -126,6 +126,20 @@ public class SchedulingServiceImpl {
             throw new RuntimeException("Table not found");
         }
     }
+
+    public List<Map<String, String>> getAllBookedSlotsWithCustomerDetails() {
+        return timeSlotRepository.findAll().stream()
+                .filter(slot -> !slot.isAvailable()) // Filter only booked slots
+                .map(slot -> Map.of(
+                        "tableName", slot.getTable().getName(),
+                        "date", slot.getDate().toString(),
+                        "time", slot.getTime().toString(),
+                        "firstname", slot.getCustomer().getFirstname(),
+                        "lastname", slot.getCustomer().getLastname(),
+                        "phonenumber", slot.getCustomer().getPhonenumber()
+                ))
+                .collect(Collectors.toList());
+    }
     public Map<String, Map<String, Map<String, String>>> getAvailableTimeSlots() {
         // Fetch all available time slots in one query
         List<TimeSlot> slots = timeSlotRepository.findAll()

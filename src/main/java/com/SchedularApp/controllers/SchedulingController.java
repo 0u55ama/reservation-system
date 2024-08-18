@@ -67,6 +67,12 @@ public class SchedulingController {
 //        "time": "08:00"
 //    }
 
+    @GetMapping("/booked-slots")
+    public ResponseEntity<List<Map<String, String>>> getAllBookedSlotsWithCustomerDetails() {
+        List<Map<String, String>> bookedSlots = schedulingService.getAllBookedSlotsWithCustomerDetails();
+        return ResponseEntity.ok(bookedSlots);
+    }
+
     @GetMapping("/get-all-dates-times")
     public ResponseEntity<Map<String, Map<String, String>>> getAllDatesAndTimesForTable(@RequestBody TimeSlotDto requestDto) {
         Map<String, Map<String, String>> datesAndTimes = schedulingService.getAllDatesAndTimesForTable(requestDto.getTableName());
