@@ -27,6 +27,12 @@ public class SchedulingServiceImpl {
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private WhatsAppService whatsAppService;
+
 //    public boolean saveTimeSlot(String tableName, LocalDate date, LocalTime time) {
 //        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
 //        if (tableOpt.isPresent()) {
@@ -80,14 +86,28 @@ public class SchedulingServiceImpl {
                 ));
     }
 
-//    public boolean bookTimeSlot(String tableName, LocalDate date, LocalTime time) {
-//        Optional<TableEntity> tableOpt = tableRepository.findByName(tableName);
+
+//    public boolean bookTimeSlot(BookingRequestDto bookingRequestDto) {
+//        Optional<TableEntity> tableOpt = tableRepository.findByName(bookingRequestDto.getTableName());
 //        if (tableOpt.isPresent()) {
 //            TableEntity table = tableOpt.get();
-//            Optional<TimeSlot> existingSlot = timeSlotRepository.findByTableAndDateAndTime(table, date, time);
+//            Optional<TimeSlot> existingSlot = timeSlotRepository.findByTableAndDateAndTime(table, LocalDate.parse(bookingRequestDto.getDate()), LocalTime.parse(bookingRequestDto.getTime()));
 //            if (existingSlot.isPresent() && existingSlot.get().isAvailable()) {
-//                existingSlot.get().setAvailable(false);
-//                timeSlotRepository.save(existingSlot.get());
+//                // Create and save the customer
+//                Customer customer = new Customer();
+//                customer.setFirstname(bookingRequestDto.getFirstname());
+//                customer.setLastname(bookingRequestDto.getLastname());
+//                customer.setPhonenumber(bookingRequestDto.getPhonenumber());
+//                // Additional customer details can be set here
+//
+//                customerRepository.save(customer);
+//
+//                // Update the time slot
+//                TimeSlot timeSlot = existingSlot.get();
+//                timeSlot.setAvailable(false);
+//                timeSlot.setCustomer(customer);
+//                timeSlotRepository.save(timeSlot);
+//
 //                return true; // Time slot has been booked
 //            } else {
 //                return false; // Time slot is not available
@@ -117,6 +137,23 @@ public class SchedulingServiceImpl {
                 timeSlot.setAvailable(false);
                 timeSlot.setCustomer(customer);
                 timeSlotRepository.save(timeSlot);
+
+//                // Send email notification
+//                String emailSubject = "Booking Confirmation";
+//                String emailBody = String.format(
+//                        "Dear %s %s,\n\nYour booking for %s at %s on %s has been confirmed.",
+//                        customer.getFirstname(), customer.getLastname(),
+//                        table.getName(), bookingRequestDto.getTime(), bookingRequestDto.getDate()
+//                );
+//                emailService.sendBookingConfirmation(customer.getEmail(), emailSubject, emailBody);
+
+                // Send WhatsApp notification
+                String whatsappMessage = String.format(
+                        "Hello %s %s, your booking for %s at %s on %s has been confirmed.",
+                        customer.getFirstname(), customer.getLastname(),
+                        table.getName(), bookingRequestDto.getTime(), bookingRequestDto.getDate()
+                );
+                whatsAppService.sendWhatsAppMessage(customer.getPhonenumber(), whatsappMessage);
 
                 return true; // Time slot has been booked
             } else {

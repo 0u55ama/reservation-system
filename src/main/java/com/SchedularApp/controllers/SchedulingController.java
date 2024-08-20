@@ -63,9 +63,13 @@ public class SchedulingController {
     }
 //    {
 //        "tableName": "table_A",
-//        "date": "2024-01-01",
-//        "time": "08:00"
+//            "date": "2024-01-01",
+//            "time": "08:00",
+//            "firstname": "John",
+//            "lastname": "Doe",
+//            "phonenumber": "123-456-7890"
 //    }
+
 
     @GetMapping("/booked-slots")
     public ResponseEntity<List<Map<String, String>>> getAllBookedSlotsWithCustomerDetails() {
