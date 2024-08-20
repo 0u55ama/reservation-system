@@ -8,6 +8,16 @@ public class BookingRequestDto {
     private String lastname;
     private String phonenumber;
 
+    private String email;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     // Getters and Setters
     public String getTableName() {
         return tableName;

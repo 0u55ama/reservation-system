@@ -68,6 +68,7 @@ public class SchedulingController {
 //            "firstname": "John",
 //            "lastname": "Doe",
 //            "phonenumber": "123-456-7890"
+//    "email" : email@emal.com
 //    }
 
 

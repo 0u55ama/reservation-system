@@ -128,6 +128,7 @@ public class SchedulingServiceImpl {
                 customer.setFirstname(bookingRequestDto.getFirstname());
                 customer.setLastname(bookingRequestDto.getLastname());
                 customer.setPhonenumber(bookingRequestDto.getPhonenumber());
+                customer.setEmail(bookingRequestDto.getEmail());
                 // Additional customer details can be set here
 
                 customerRepository.save(customer);
@@ -138,14 +139,14 @@ public class SchedulingServiceImpl {
                 timeSlot.setCustomer(customer);
                 timeSlotRepository.save(timeSlot);
 
-//                // Send email notification
-//                String emailSubject = "Booking Confirmation";
-//                String emailBody = String.format(
-//                        "Dear %s %s,\n\nYour booking for %s at %s on %s has been confirmed.",
-//                        customer.getFirstname(), customer.getLastname(),
-//                        table.getName(), bookingRequestDto.getTime(), bookingRequestDto.getDate()
-//                );
-//                emailService.sendBookingConfirmation(customer.getEmail(), emailSubject, emailBody);
+                // Send email notification
+                String emailSubject = "Booking Confirmation";
+                String emailBody = String.format(
+                        "Dear %s %s,\n\nYour booking for %s at %s on %s has been confirmed. \n\n Thank you",
+                        customer.getFirstname(), customer.getLastname(),
+                        table.getName(), bookingRequestDto.getTime(), bookingRequestDto.getDate()
+                );
+                emailService.sendBookingConfirmation(customer.getEmail(), emailSubject, emailBody);
 
                 // Send WhatsApp notification
                 String whatsappMessage = String.format(
