@@ -1,12 +1,9 @@
 package com.SchedularApp.services;
 
-import com.SchedularApp.Entities.TimeSlot;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
+import java.util.Map;
 
 public interface ScheduledDateService {
-    public List<TimeSlot> getWeekDates();
-    public boolean saveDate(LocalDate date, LocalTime time);
+    public Map<String, Map<String, String>> getAllDatesAndTimesForTable(String tableName);
+    public Map<String, String> getTimesForTableOnDate(String tableName, String date);
+    public Map<String, Map<String, Map<String, String>>> getAvailableTimeSlots();
 }

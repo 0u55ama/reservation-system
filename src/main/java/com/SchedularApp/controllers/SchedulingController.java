@@ -4,9 +4,10 @@ import com.SchedularApp.dtos.BookingRequestDto;
 import com.SchedularApp.dtos.DeleteRequestDto;
 import com.SchedularApp.dtos.MultiDateTableCreationRequestDto;
 import com.SchedularApp.dtos.TimeSlotDto;
+import com.SchedularApp.services.AdminServiceImpl;
+import com.SchedularApp.services.CustomerServiceImpl;
 import com.SchedularApp.services.SchedulingServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,58 +24,36 @@ public class SchedulingController {
     @Autowired
     private SchedulingServiceImpl schedulingService;
 
+    @Autowired
+    private AdminServiceImpl adminService;
 
-//    @PostMapping("/add")
-//    public ResponseEntity<String> addTimeSlot(@RequestBody TimeSlotDto timeSlotRequestDto) {
-//        boolean isAdded = schedulingService.saveTimeSlot(
-//                timeSlotRequestDto.getTableName(),
-//                LocalDate.parse(timeSlotRequestDto.getDate()),
-//                LocalTime.parse(timeSlotRequestDto.getTime())
-//        );
-//        if (isAdded) {
-//            return ResponseEntity.ok("Time slot added successfully.");
-//        } else {
-//            return ResponseEntity.badRequest().body("Time slot already exists.");
-//        }
-//    }
+    @Autowired
+    private CustomerServiceImpl customerService;
 
-//    @PostMapping("/schedule")
-//    public ResponseEntity<String> bookTimeSlot(@RequestBody TimeSlotDto timeSlotRequestDto) {
-//        boolean isBooked = schedulingService.bookTimeSlot(
-//                timeSlotRequestDto.getTableName(),
-//                LocalDate.parse(timeSlotRequestDto.getDate()),
-//                LocalTime.parse(timeSlotRequestDto.getTime())
-//        );
-//        if (isBooked) {
-//            return ResponseEntity.ok("Time slot booked successfully.");
-//        } else {
-//            return ResponseEntity.badRequest().body("Time slot is not available at the moment.");
-//        }
-//    }
 
     @PostMapping("/schedule")
     public ResponseEntity<String> bookTimeSlot(@RequestBody BookingRequestDto bookingRequestDto) {
-        boolean isBooked = schedulingService.bookTimeSlot(bookingRequestDto);
+        boolean isBooked = customerService.bookTimeSlot(bookingRequestDto);
         if (isBooked) {
             return ResponseEntity.ok("Time slot booked successfully.");
         } else {
             return ResponseEntity.badRequest().body("Time slot is not available at the moment.");
         }
     }
+
 //    {
 //        "tableName": "table_A",
 //            "date": "2024-01-01",
 //            "time": "08:00",
-//            "firstname": "John",
-//            "lastname": "Doe",
-//            "phonenumber": "123-456-7890"
-//    "email" : email@emal.com
+//            "firstname": "Oussama",
+//            "lastname": "Ait Lamaalam",
+//            "phonenumber": "+212629991723",
+//            "email" : "asifu00000@gmail.com"
 //    }
-
 
     @GetMapping("/booked-slots")
     public ResponseEntity<List<Map<String, String>>> getAllBookedSlotsWithCustomerDetails() {
-        List<Map<String, String>> bookedSlots = schedulingService.getAllBookedSlotsWithCustomerDetails();
+        List<Map<String, String>> bookedSlots = adminService.getAllBookedSlotsWithCustomerDetails();
         return ResponseEntity.ok(bookedSlots);
     }
 
@@ -83,6 +62,11 @@ public class SchedulingController {
         Map<String, Map<String, String>> datesAndTimes = schedulingService.getAllDatesAndTimesForTable(requestDto.getTableName());
         return ResponseEntity.ok(datesAndTimes);
     }
+
+//    {
+//        "tableName": "table_A",
+//    }
+
     @GetMapping("/get-times-for-date")
     public ResponseEntity<Map<String, String>> getTimesForTableOnDate(@RequestBody TimeSlotDto requestDto) {
         Map<String, String> times = schedulingService.getTimesForTableOnDate(
@@ -92,9 +76,14 @@ public class SchedulingController {
         return ResponseEntity.ok(times);
     }
 
+//    {
+//        "tableName": "table_A",
+//         "date": "2024-01-01"
+//    }
+
     @PostMapping("/create-table")
     public ResponseEntity<String> createTable(@RequestBody MultiDateTableCreationRequestDto requestDto) {
-        boolean isCreated = schedulingService.createTable(
+        boolean isCreated = adminService.createTable(
                 requestDto.getTableName(),
                 requestDto.getDateTimeSlots() != null ?
                         requestDto.getDateTimeSlots().entrySet().stream().collect(
@@ -113,13 +102,20 @@ public class SchedulingController {
         }
     }
 
+//    {
+//        "tableName": "table_C",
+//            "dateTimeSlots": {
+//        "2024-01-01": ["10:00"],
+//        "2024-01-02": []
+//    }
+//    }
 // {
 //     "tableName": "table_C",
 // }
 
     @PostMapping("/add-dates-times")
     public ResponseEntity<String> addDatesAndTimesToTable(@RequestBody MultiDateTableCreationRequestDto requestDto) {
-        boolean isUpdated = schedulingService.addDatesAndTimesToTable(
+        boolean isUpdated = adminService.addDatesAndTimesToTable(
                 requestDto.getTableName(),
                 requestDto.getDateTimeSlots().entrySet().stream().collect(
                         Collectors.toMap(
@@ -154,7 +150,7 @@ public class SchedulingController {
     }
     @DeleteMapping("/delete-dates")
     public ResponseEntity<String> deleteDates(@RequestBody DeleteRequestDto requestDto) {
-        boolean isDeleted = schedulingService.deleteDates(requestDto.getTableName(), requestDto.getDates());
+        boolean isDeleted = adminService.deleteDates(requestDto.getTableName(), requestDto.getDates());
         if (isDeleted) {
             return ResponseEntity.ok("Dates and all associated time slots deleted successfully.");
         } else {
@@ -171,7 +167,7 @@ public class SchedulingController {
 
     @DeleteMapping("/delete-times")
     public ResponseEntity<String> deleteTimes(@RequestBody DeleteRequestDto requestDto) {
-        boolean isDeleted = schedulingService.deleteTimes(requestDto.getTableName(), requestDto.getDates().get(0), requestDto.getTimes());
+        boolean isDeleted = adminService.deleteTimes(requestDto.getTableName(), requestDto.getDates().get(0), requestDto.getTimes());
         if (isDeleted) {
             return ResponseEntity.ok("Time slots deleted successfully.");
         } else {
@@ -190,7 +186,7 @@ public class SchedulingController {
 
     @DeleteMapping("/delete-table")
     public ResponseEntity<String> deleteTable(@RequestBody DeleteRequestDto requestDto) {
-        boolean isDeleted = schedulingService.deleteTable(requestDto.getTableName());
+        boolean isDeleted = adminService.deleteTable(requestDto.getTableName());
         if (isDeleted) {
             return ResponseEntity.ok("Table and all associated dates and time slots deleted successfully.");
         } else {
