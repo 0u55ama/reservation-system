@@ -32,7 +32,7 @@ public class SchedulingController {
 
 
     @PostMapping("/schedule")
-    public ResponseEntity<String> bookTimeSlot(@RequestBody BookingRequestDto bookingRequestDto) {
+    public ResponseEntity<String> bookTimeSlot(@RequestBody BookingRequestDto bookingRequestDto) throws InterruptedException {
         boolean isBooked = customerService.bookTimeSlot(bookingRequestDto);
         if (isBooked) {
             return ResponseEntity.ok("Time slot booked successfully.");
